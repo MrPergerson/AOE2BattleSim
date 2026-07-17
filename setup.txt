@@ -1,0 +1,41 @@
+AOE2 Battle Sim - starting the React dev server
+================================================
+
+Prerequisites
+-------------
+- Node.js + npm installed (check with: node --version)
+
+Steps
+-----
+1. Open a terminal in the project root (d:\Projects\AOE2CombatSim).
+2. Move into the web app folder:
+     cd web
+3. Install dependencies (only needed the first time, or after package.json changes):
+     npm install
+4. Start the dev server:
+     npm run dev
+5. Open the URL it prints (default: http://localhost:5173) in your browser.
+
+Stopping the server: Ctrl+C in the terminal it's running in.
+
+If the server was started detached (e.g. via `nohup ... &`, as Claude does when running it in
+the background) or its terminal got closed without stopping it first, it keeps running as an
+orphaned process - closing the terminal alone won't kill it. To find and stop it manually:
+     tasklist /FI "IMAGENAME eq node.exe"
+     taskkill /PID <pid> /F
+(There are usually two node.exe entries for one `npm run dev` - a parent and a worker - kill
+both.) You can confirm it's actually down by checking that http://localhost:5173 stops
+responding.
+
+Notes
+-----
+- The app reads static data from web/public/data/ (civs.json + one units/<civ_id>.json
+  per civ). This data is already generated and committed - you don't need to do
+  anything else to run the app.
+- That data is produced by the Python pipeline in /pipeline (build_data.py), which reads
+  your local AoE2:DE install via the paths in pipeline/paths. You only need to re-run
+  that pipeline if you want to regenerate the data (e.g. after a game update, or after
+  editing pipeline/unit_allowlist.json):
+     cd pipeline
+     ..\.venv\Scripts\python.exe -m pip install -r requirements.txt   (first time only)
+     ..\.venv\Scripts\python.exe build_data.py

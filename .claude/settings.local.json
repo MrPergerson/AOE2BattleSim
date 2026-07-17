@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/python.exe explore_dat.py)",
+      "Bash(cat)",
+      "Bash(.venv/Scripts/python.exe /tmp_explore_effects.py)",
+      "Bash(.venv/Scripts/python.exe \"C:\\\\Users\\\\colep\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--Projects-AOE2CombatSim\\\\bdeaecdd-f6e0-405f-bafe-3c6e51ae31cd\\\\scratchpad\\\\explore_effects.py\")",
+      "Bash(.venv/Scripts/python.exe \"C:\\\\Users\\\\colep\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--Projects-AOE2CombatSim\\\\bdeaecdd-f6e0-405f-bafe-3c6e51ae31cd\\\\scratchpad\\\\diff_effects.py\")",
+      "Bash(.venv/Scripts/python.exe \"C:\\\\Users\\\\colep\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--Projects-AOE2CombatSim\\\\bdeaecdd-f6e0-405f-bafe-3c6e51ae31cd\\\\scratchpad\\\\check_prereqs.py\")",
+      "Bash(.venv/Scripts/python.exe pipeline/explore_dat.py)",
+      "Bash(../.venv/Scripts/python.exe generate_unit_seed.py)",
+      "Bash(../.venv/Scripts/python.exe -c \"import json; d=json.load\\(open\\('unit_allowlist.json', encoding='utf-8'\\)\\); print\\(len\\(d\\)\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(../.venv/Scripts/python.exe build_tech_tree.py)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/data/tech_tree/1.json)",
+      "Bash(curl -s http://localhost:5173/data/tech_tree/1.json)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/src/App.tsx)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/src/components/TechTree.tsx)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/src/components/CombatSim.tsx)",
+      "Bash(../.venv/Scripts/python.exe -c ' *)",
+      "Bash(../.venv/Scripts/python.exe build_upgrades.py)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/src/components/UpgradePanel.tsx)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/src/components/BattleReport.tsx)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/src/upgrades.ts)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/data/upgrades/1.json)"
+    ]
+  }
+}

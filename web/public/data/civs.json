@@ -1,0 +1,238 @@
+[
+  {
+    "id": 1,
+    "name": "British"
+  },
+  {
+    "id": 2,
+    "name": "French"
+  },
+  {
+    "id": 3,
+    "name": "Goths"
+  },
+  {
+    "id": 4,
+    "name": "Teutons"
+  },
+  {
+    "id": 5,
+    "name": "Japanese"
+  },
+  {
+    "id": 6,
+    "name": "Chinese"
+  },
+  {
+    "id": 7,
+    "name": "Byzantine"
+  },
+  {
+    "id": 8,
+    "name": "Persians"
+  },
+  {
+    "id": 9,
+    "name": "Saracens"
+  },
+  {
+    "id": 10,
+    "name": "Turks"
+  },
+  {
+    "id": 11,
+    "name": "Vikings"
+  },
+  {
+    "id": 12,
+    "name": "Mongols"
+  },
+  {
+    "id": 13,
+    "name": "Celts"
+  },
+  {
+    "id": 14,
+    "name": "Spanish"
+  },
+  {
+    "id": 15,
+    "name": "Aztecs"
+  },
+  {
+    "id": 16,
+    "name": "Mayan"
+  },
+  {
+    "id": 17,
+    "name": "Huns"
+  },
+  {
+    "id": 18,
+    "name": "Koreans"
+  },
+  {
+    "id": 19,
+    "name": "Italians"
+  },
+  {
+    "id": 20,
+    "name": "Hindustanis"
+  },
+  {
+    "id": 21,
+    "name": "Incas"
+  },
+  {
+    "id": 22,
+    "name": "Magyars"
+  },
+  {
+    "id": 23,
+    "name": "Slavs"
+  },
+  {
+    "id": 24,
+    "name": "Portuguese"
+  },
+  {
+    "id": 25,
+    "name": "Ethiopians"
+  },
+  {
+    "id": 26,
+    "name": "Malians"
+  },
+  {
+    "id": 27,
+    "name": "Berbers"
+  },
+  {
+    "id": 28,
+    "name": "Khmer"
+  },
+  {
+    "id": 29,
+    "name": "Malay"
+  },
+  {
+    "id": 30,
+    "name": "Burmese"
+  },
+  {
+    "id": 31,
+    "name": "Vietnamese"
+  },
+  {
+    "id": 32,
+    "name": "Bulgarians"
+  },
+  {
+    "id": 33,
+    "name": "Tatars"
+  },
+  {
+    "id": 34,
+    "name": "Cumans"
+  },
+  {
+    "id": 35,
+    "name": "Lithuanians"
+  },
+  {
+    "id": 36,
+    "name": "Burgundians"
+  },
+  {
+    "id": 37,
+    "name": "Sicilians"
+  },
+  {
+    "id": 38,
+    "name": "Poles"
+  },
+  {
+    "id": 39,
+    "name": "Bohemians"
+  },
+  {
+    "id": 40,
+    "name": "Dravidians"
+  },
+  {
+    "id": 41,
+    "name": "Bengalis"
+  },
+  {
+    "id": 42,
+    "name": "Gurjaras"
+  },
+  {
+    "id": 43,
+    "name": "Romans"
+  },
+  {
+    "id": 44,
+    "name": "Armenians"
+  },
+  {
+    "id": 45,
+    "name": "Georgians"
+  },
+  {
+    "id": 46,
+    "name": "Achaemenids"
+  },
+  {
+    "id": 47,
+    "name": "Athenians"
+  },
+  {
+    "id": 48,
+    "name": "Spartans"
+  },
+  {
+    "id": 49,
+    "name": "Shu"
+  },
+  {
+    "id": 50,
+    "name": "Wu"
+  },
+  {
+    "id": 51,
+    "name": "Wei"
+  },
+  {
+    "id": 52,
+    "name": "Jurchens"
+  },
+  {
+    "id": 53,
+    "name": "Khitans"
+  },
+  {
+    "id": 54,
+    "name": "Macedonians"
+  },
+  {
+    "id": 55,
+    "name": "Thracians"
+  },
+  {
+    "id": 56,
+    "name": "Puru"
+  },
+  {
+    "id": 57,
+    "name": "Muisca"
+  },
+  {
+    "id": 58,
+    "name": "Mapuche"
+  },
+  {
+    "id": 59,
+    "name": "Tupi"
+  }
+]
