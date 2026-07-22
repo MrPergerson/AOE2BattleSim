@@ -1,21 +1,22 @@
 import { appliesTo } from "../upgrades";
-import type { Unit, Upgrade } from "../types";
+import type { Unit, Upgrade, UpgradeSource } from "../types";
 
-const AGE_OPTIONS = [
-  { value: 1, label: "Dark Age" },
-  { value: 2, label: "Feudal Age" },
-  { value: 3, label: "Castle Age" },
-  { value: 4, label: "Imperial Age" },
-];
+const AGE_LABELS: Record<number, string> = {
+  1: "Dark Age",
+  2: "Feudal Age",
+  3: "Castle Age",
+  4: "Imperial Age",
+};
 
 interface UpgradePanelProps {
   label: string;
+  source: UpgradeSource;
   unit: Unit | null;
   upgrades: Upgrade[];
-  age: number;
-  onAgeChange: (age: number) => void;
   selectedIds: Set<number>;
   onToggle: (id: number, checked: boolean) => void;
+  onSelectAll: (ids: number[]) => void;
+  onClearAll: (ids: number[]) => void;
 }
 
 function formatBonus(u: Upgrade): string {
@@ -29,32 +30,44 @@ function formatBonus(u: Upgrade): string {
 
 export function UpgradePanel({
   label,
+  source,
   unit,
   upgrades,
-  age,
-  onAgeChange,
   selectedIds,
   onToggle,
+  onSelectAll,
+  onClearAll,
 }: UpgradePanelProps) {
   if (!unit) return null;
 
-  const visible = upgrades.filter(
-    (u) => u.age === age && u.status !== "NotAvailable" && appliesTo(unit, u.line),
-  );
+  const visible = upgrades
+    .filter(
+      (u) =>
+        u.source === source &&
+        u.status !== "NotAvailable" &&
+        (u.line === "unclassified" || appliesTo(unit, u.line)),
+    )
+    .sort((a, b) => a.age - b.age || a.name.localeCompare(b.name));
 
   return (
     <div className="upgrade-panel">
-      <h3>{label} Upgrades</h3>
-      <select value={age} onChange={(e) => onAgeChange(Number(e.target.value))}>
-        {AGE_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+      <h3>
+        {label} {source} Upgrades
+      </h3>
+
+      {visible.length > 0 && (
+        <div className="upgrade-panel-actions">
+          <button type="button" onClick={() => onSelectAll(visible.map((u) => u.id))}>
+            Select All
+          </button>
+          <button type="button" onClick={() => onClearAll(visible.map((u) => u.id))}>
+            Clear All
+          </button>
+        </div>
+      )}
 
       {visible.length === 0 ? (
-        <p className="upgrade-panel-empty">No Blacksmith upgrades apply to this unit at this age.</p>
+        <p className="upgrade-panel-empty">No {source} upgrades apply to this unit.</p>
       ) : (
         <ul className="upgrade-list">
           {visible.map((u) => (
@@ -65,7 +78,12 @@ export function UpgradePanel({
                   checked={selectedIds.has(u.id)}
                   onChange={(e) => onToggle(u.id, e.target.checked)}
                 />
-                {u.name} <span className="upgrade-bonus-text">({formatBonus(u)})</span>
+                {u.name}{" "}
+                <span className="upgrade-bonus-text">
+                  ({AGE_LABELS[u.age] ?? `Age ${u.age}`}
+                  {formatBonus(u) ? `, ${formatBonus(u)}` : ", no modeled effect"}
+                  )
+                </span>
               </label>
             </li>
           ))}

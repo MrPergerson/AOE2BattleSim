@@ -5,6 +5,7 @@ export interface Civ {
 
 export interface ClassAmount {
   class_: number;
+  class_name: string;
   amount: number;
 }
 
@@ -62,12 +63,19 @@ export type UpgradeLine =
   | "ranged_attack"
   | "infantry_armor"
   | "cavalry_armor"
-  | "ranged_armor";
+  | "ranged_armor"
+  | "siege_range"
+  | "siege_weapon"
+  | "ship_pierce_armor"
+  | "unclassified";
+
+export type UpgradeSource = "Blacksmith" | "University" | "Unique";
 
 export interface Upgrade {
   id: number;
   name: string;
   line: UpgradeLine;
+  source: UpgradeSource;
   age: number;
   status: TechTreeNodeStatus;
   attack_bonus: number;

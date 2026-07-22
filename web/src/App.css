@@ -60,6 +60,28 @@
   width: 70px;
 }
 
+.approach-distance {
+  margin-bottom: 24px;
+}
+
+.approach-distance label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.approach-distance input {
+  font: inherit;
+  width: 70px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+}
+
 .stat-compare {
   width: 100%;
   border-collapse: collapse;
@@ -102,6 +124,182 @@
   margin: 8px 0;
 }
 
+.battle-visualizer {
+  margin-bottom: 32px;
+}
+
+.battle-visualizer > button {
+  font: inherit;
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.battle-visualizer > button:hover {
+  background: var(--accent-border);
+}
+
+.battle-visualizer-empty {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.battlefield {
+  position: relative;
+  min-height: 140px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.battlefield-tiles {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  z-index: 0;
+}
+
+.battlefield-tile {
+  flex: 1;
+  border-right: 1px solid var(--border);
+}
+
+.battlefield-tile:nth-child(odd) {
+  background: var(--bg);
+}
+
+.battlefield-tile:nth-child(even) {
+  background: var(--code-bg);
+}
+
+/* Each army sits at an absolute `left` anchor representing its real position on
+   the ground (0..distance tiles, computed in BattleVisualizer) rather than being
+   confined to its own half of the field - translateX(-50%) centers the cluster
+   on that point so it can sit anywhere, including past the midline, the same way
+   units move freely across a top-down RTS map. The side-a/side-b defaults below
+   (mirroring worldToPercent's inset edges) are what's shown before a battle has
+   been simulated. */
+.army-cluster {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
+  gap: 4px;
+  max-width: 42%;
+  padding: 6px;
+  border-radius: 6px;
+  transition:
+    left 0.4s linear,
+    background 0.15s ease;
+}
+
+.army-cluster.side-a {
+  left: 6%;
+}
+
+.army-cluster.side-b {
+  left: 94%;
+}
+
+.army-cluster.attacking {
+  background: var(--accent-bg);
+}
+
+.unit-token {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: #2a78d6;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  transition: opacity 0.2s ease;
+}
+
+.unit-token.side-b {
+  background: #e34948;
+}
+
+@media (prefers-color-scheme: dark) {
+  .unit-token {
+    background: #3987e5;
+  }
+
+  .unit-token.side-b {
+    background: #e66767;
+  }
+}
+
+.unit-token.dead {
+  opacity: 0.15;
+}
+
+.unit-token-hp {
+  height: 3px;
+  width: 100%;
+  transition:
+    width 0.15s ease,
+    background 0.15s ease;
+}
+
+.army-totals {
+  display: flex;
+  gap: 24px;
+  margin-top: 12px;
+}
+
+.army-total {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.army-total-label {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.army-total-bar {
+  flex: 1;
+  height: 12px;
+  border-radius: 6px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.army-total-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition:
+    width 0.15s ease,
+    background 0.15s ease;
+}
+
+.army-total-value {
+  flex-shrink: 0;
+  white-space: nowrap;
+  color: var(--text-h);
+}
+
+.battle-winner-banner {
+  margin-top: 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
 .upgrade-panels {
   display: flex;
   gap: 24px;
@@ -118,14 +316,25 @@
   color: var(--text-h);
 }
 
-.upgrade-panel select {
+.upgrade-panel-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.upgrade-panel-actions button {
   font: inherit;
-  padding: 6px 8px;
+  font-size: 13px;
+  padding: 4px 10px;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text-h);
-  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.upgrade-panel-actions button:hover {
+  background: var(--border);
 }
 
 .upgrade-panel-empty {

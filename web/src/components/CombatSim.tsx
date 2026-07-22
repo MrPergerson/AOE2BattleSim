@@ -5,15 +5,9 @@ import { UpgradePanel } from "./UpgradePanel";
 import { BattleReport } from "./BattleReport";
 import { StatCompare } from "./StatCompare";
 import { applyUpgrades } from "../upgrades";
-import type { Civ, Unit, Upgrade } from "../types";
+import type { Civ, Unit, Upgrade, UpgradeSource } from "../types";
 
-function effectiveUpgradeIds(upgrades: Upgrade[], age: number, selected: Set<number>): Set<number> {
-  const ids = new Set<number>();
-  for (const u of upgrades) {
-    if (u.age < age || (u.age === age && selected.has(u.id))) ids.add(u.id);
-  }
-  return ids;
-}
+const UPGRADE_SOURCES: UpgradeSource[] = ["Blacksmith", "University", "Unique"];
 
 export function CombatSim() {
   const [civs, setCivs] = useState<Civ[]>([]);
@@ -24,8 +18,6 @@ export function CombatSim() {
   const [countA, setCountA] = useState(1);
   const [countB, setCountB] = useState(1);
 
-  const [ageA, setAgeA] = useState(1);
-  const [ageB, setAgeB] = useState(1);
   const [upgradesA, setUpgradesA] = useState<Upgrade[]>([]);
   const [upgradesB, setUpgradesB] = useState<Upgrade[]>([]);
   const [selectedIdsA, setSelectedIdsA] = useState<Set<number>>(new Set());
@@ -68,12 +60,25 @@ export function CombatSim() {
     });
   };
 
-  const appliedA = unitA
-    ? applyUpgrades(unitA, upgradesA, effectiveUpgradeIds(upgradesA, ageA, selectedIdsA))
-    : null;
-  const appliedB = unitB
-    ? applyUpgrades(unitB, upgradesB, effectiveUpgradeIds(upgradesB, ageB, selectedIdsB))
-    : null;
+  const selectAllA = (ids: number[]) =>
+    setSelectedIdsA((prev) => new Set([...prev, ...ids]));
+  const clearAllA = (ids: number[]) =>
+    setSelectedIdsA((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+  const selectAllB = (ids: number[]) =>
+    setSelectedIdsB((prev) => new Set([...prev, ...ids]));
+  const clearAllB = (ids: number[]) =>
+    setSelectedIdsB((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+
+  const appliedA = unitA ? applyUpgrades(unitA, upgradesA, selectedIdsA) : null;
+  const appliedB = unitB ? applyUpgrades(unitB, upgradesB, selectedIdsB) : null;
 
   return (
     <div className="combat-sim">
@@ -107,26 +112,30 @@ export function CombatSim() {
         countB={countB}
       />
 
-      <div className="upgrade-panels">
-        <UpgradePanel
-          label="Unit A"
-          unit={unitA}
-          upgrades={upgradesA}
-          age={ageA}
-          onAgeChange={setAgeA}
-          selectedIds={selectedIdsA}
-          onToggle={toggleA}
-        />
-        <UpgradePanel
-          label="Unit B"
-          unit={unitB}
-          upgrades={upgradesB}
-          age={ageB}
-          onAgeChange={setAgeB}
-          selectedIds={selectedIdsB}
-          onToggle={toggleB}
-        />
-      </div>
+      {UPGRADE_SOURCES.map((source) => (
+        <div className="upgrade-panels" key={source}>
+          <UpgradePanel
+            label="Unit A"
+            source={source}
+            unit={unitA}
+            upgrades={upgradesA}
+            selectedIds={selectedIdsA}
+            onToggle={toggleA}
+            onSelectAll={selectAllA}
+            onClearAll={clearAllA}
+          />
+          <UpgradePanel
+            label="Unit B"
+            source={source}
+            unit={unitB}
+            upgrades={upgradesB}
+            selectedIds={selectedIdsB}
+            onToggle={toggleB}
+            onSelectAll={selectAllB}
+            onClearAll={clearAllB}
+          />
+        </div>
+      ))}
 
       <StatCompare
         unitA={appliedA?.unit ?? null}

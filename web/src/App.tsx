@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { CombatSim } from "./components/CombatSim";
+import { ApproachSim } from "./components/ApproachSim";
 import { TechTree } from "./components/TechTree";
 import "./App.css";
 
-type Tab = "combat" | "tech-tree";
+type Tab = "combat" | "tech-tree" | "approach";
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>("combat");
@@ -26,8 +27,21 @@ function App() {
         >
           Tech Tree
         </button>
+        <button
+          type="button"
+          className={activeTab === "approach" ? "active" : ""}
+          onClick={() => setActiveTab("approach")}
+        >
+          Approach Sim
+        </button>
       </div>
-      {activeTab === "combat" ? <CombatSim /> : <TechTree />}
+      {activeTab === "combat" ? (
+        <CombatSim />
+      ) : activeTab === "tech-tree" ? (
+        <TechTree />
+      ) : (
+        <ApproachSim />
+      )}
     </div>
   );
 }

@@ -16,6 +16,53 @@ OUTPUT_DIR = Path(__file__).resolve().parent.parent / "web" / "public" / "data"
 # 12 -> "Cavalry", 13 -> "Siege Weapon", 22 -> "Warship", etc. all matched their real units).
 CLASS_NAME_LANG_OFFSET = 13300
 
+# attacks[]/armours[]' class_ is a *different*, unrelated enum from unit.class_ above
+# (confusingly, genieutils names both fields "class_") - it's the game's fixed "Armor
+# Class" bonus-damage-matching table, not covered by any language string. Verified this
+# session: the CLASS_NAME_LANG_OFFSET trick gives nonsense for these ids (e.g. 3 ->
+# "Building", 4 -> "Civilian"), which contradicts combat.ts's independently-verified
+# 3 == base pierce / 4 == base melee. This table is instead the standard, static Armor
+# Class list documented at https://liquipedia.net/ageofempires/Armor_class - ids absent
+# here (37, 38, 39, 41, 60 seen in this project's unit data) are newer additions with no
+# public documentation found, and fall back to "Class N" rather than guessing.
+ARMOR_CLASS_NAMES = {
+    1: "Infantry",
+    2: "Turtle Ship",
+    3: "Base Pierce",
+    4: "Base Melee",
+    5: "War Elephant",
+    8: "Cavalry",
+    11: "Building",
+    13: "Stone Defense",
+    14: "Predator Animal",
+    15: "Archer",
+    16: "Ship",
+    17: "Ram",
+    18: "Tree",
+    19: "Unique Unit",
+    20: "Siege Weapon",
+    21: "Standard Building",
+    22: "Wall and Gate",
+    23: "Gunpowder Unit",
+    24: "Boar",
+    25: "Monk",
+    26: "Castle",
+    27: "Spearman",
+    28: "Cavalry Archer",
+    29: "Eagle Warrior",
+    30: "Camel",
+    31: "Anti-Leitis",
+    32: "Condottiero",
+    33: "Anti-Gunpowder",
+    34: "Fishing Ship",
+    35: "Mameluke",
+    36: "Hero and King",
+}
+
+
+def armor_class_name(class_id: int) -> str:
+    return ARMOR_CLASS_NAMES.get(class_id, f"Class {class_id}")
+
 
 def build_unit_record(unit, lang: dict[int, str]) -> dict:
     t50 = unit.type_50
@@ -30,8 +77,14 @@ def build_unit_record(unit, lang: dict[int, str]) -> dict:
         "class_": unit.class_,
         "class_name": lang.get(CLASS_NAME_LANG_OFFSET + unit.class_, str(unit.class_)),
         "base_armor": t50.base_armor,
-        "attacks": [{"class_": a.class_, "amount": a.amount} for a in t50.attacks],
-        "armours": [{"class_": a.class_, "amount": a.amount} for a in t50.armours],
+        "attacks": [
+            {"class_": a.class_, "class_name": armor_class_name(a.class_), "amount": a.amount}
+            for a in t50.attacks
+        ],
+        "armours": [
+            {"class_": a.class_, "class_name": armor_class_name(a.class_), "amount": a.amount}
+            for a in t50.armours
+        ],
         "max_range": t50.max_range,
         "min_range": t50.min_range,
         "blast_damage": t50.blast_damage,

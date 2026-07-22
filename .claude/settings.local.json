@@ -22,7 +22,9 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/src/components/UpgradePanel.tsx)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/src/components/BattleReport.tsx)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/src/upgrades.ts)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/data/upgrades/1.json)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/data/upgrades/1.json)",
+      "Read(//d/Applications/Steam/steamapps/common/AoE2DE/resources/_common/dat/**)",
+      "Bash(python -c \"import genieutils; print\\(genieutils.__file__\\)\")"
     ]
   }
 }

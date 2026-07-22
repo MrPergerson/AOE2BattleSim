@@ -1,5 +1,6 @@
 import type { ClassAmount, Unit } from "../types";
 import type { UpgradeBonuses } from "../upgrades";
+import { round1 } from "../format";
 
 interface StatCompareProps {
   unitA: Unit | null;
@@ -24,13 +25,11 @@ function formatCost(unit: Unit): string {
     .join(", ");
 }
 
-// class_ ids have no human-readable names in the source data - shown as raw numbers,
-// same convention as the "Class" row.
 function formatClassList(entries: ClassAmount[]): string {
   const nonzero = entries.filter((e) => e.amount !== 0);
   if (nonzero.length === 0) return "-";
   return nonzero
-    .map((e) => `class ${e.class_}: ${e.amount > 0 ? "+" : ""}${e.amount}`)
+    .map((e) => `${e.class_name}: ${e.amount > 0 ? "+" : ""}${e.amount}`)
     .join(", ");
 }
 
@@ -53,7 +52,7 @@ const ROWS: RowDef[] = [
   { label: "Range", value: (u) => u.displayed_range, bonusKey: "range" },
   { label: "Reload Time", value: (u) => u.displayed_reload_time },
   { label: "Accuracy", value: (u) => `${u.accuracy_percent}%` },
-  { label: "Speed", value: (u) => u.speed?.toFixed(2) ?? "-" },
+  { label: "Speed", value: (u) => u.speed ?? "-" },
   { label: "Line of Sight", value: (u) => u.line_of_sight },
   { label: "Cost", value: formatCost },
   { label: "Train Time", value: (u) => u.train_time ?? "-" },
@@ -63,7 +62,7 @@ function renderCell(row: RowDef, unit: Unit, bonuses: UpgradeBonuses | null) {
   const raw = row.value(unit);
   if (row.bonusKey && bonuses && typeof raw === "number") {
     const bonus = bonuses[row.bonusKey];
-    const base = raw - bonus;
+    const base = round1(raw - bonus);
     return (
       <>
         {base}
@@ -71,7 +70,7 @@ function renderCell(row: RowDef, unit: Unit, bonuses: UpgradeBonuses | null) {
       </>
     );
   }
-  return raw;
+  return typeof raw === "number" ? round1(raw) : raw;
 }
 
 export function StatCompare({ unitA, countA, bonusesA, unitB, countB, bonusesB }: StatCompareProps) {

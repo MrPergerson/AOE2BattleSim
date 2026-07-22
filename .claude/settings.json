@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python build_upgrades.py)",
+      "Skill(dataviz)",
+      "Skill(dataviz:*)"
+    ]
+  }
+}

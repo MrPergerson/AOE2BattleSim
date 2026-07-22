@@ -12,6 +12,14 @@ export function appliesTo(unit: Unit, line: UpgradeLine): boolean {
     case "ranged_attack":
     case "ranged_armor":
       return findBaseAttackClass(unit) === 3;
+    case "siege_range":
+      return unit.class_name === "Siege Weapon" && unit.max_range > 0;
+    case "siege_weapon":
+      return unit.class_name === "Siege Weapon";
+    case "ship_pierce_armor":
+      return unit.class_name === "Warship";
+    case "unclassified":
+      return false;
   }
 }
 
