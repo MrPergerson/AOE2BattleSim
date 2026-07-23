@@ -3,8 +3,11 @@ import { getCivs, getUpgrades } from "../api/data";
 import { UnitPicker } from "./UnitPicker";
 import { UpgradePanel } from "./UpgradePanel";
 import { BattleReport } from "./BattleReport";
+import { BattleVisualizer } from "./BattleVisualizer";
+import { RangeModeToggle } from "./RangeModeToggle";
 import { StatCompare } from "./StatCompare";
 import { applyUpgrades } from "../upgrades";
+import { useRangeDistance } from "../hooks/useRangeDistance";
 import type { Civ, Unit, Upgrade, UpgradeSource } from "../types";
 
 const UPGRADE_SOURCES: UpgradeSource[] = ["Blacksmith", "University", "Unique"];
@@ -80,6 +83,11 @@ export function CombatSim() {
   const appliedA = unitA ? applyUpgrades(unitA, upgradesA, selectedIdsA) : null;
   const appliedB = unitB ? applyUpgrades(unitB, upgradesB, selectedIdsB) : null;
 
+  const { rangeMode, setRangeMode, distance } = useRangeDistance(
+    appliedA?.unit ?? null,
+    appliedB?.unit ?? null,
+  );
+
   return (
     <div className="combat-sim">
       <div className="pickers">
@@ -104,6 +112,15 @@ export function CombatSim() {
           onCountChange={setCountB}
         />
       </div>
+
+      <BattleVisualizer
+        unitA={appliedA?.unit ?? null}
+        countA={countA}
+        unitB={appliedB?.unit ?? null}
+        countB={countB}
+        distance={distance}
+        controls={<RangeModeToggle rangeMode={rangeMode} onChange={setRangeMode} />}
+      />
 
       <BattleReport
         unitA={appliedA?.unit ?? null}

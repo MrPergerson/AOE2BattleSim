@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef, type ReactNode } from "react";
 import type { Unit } from "../types";
 import { simulateApproachBattle, type ApproachBattleResult } from "../approach";
 import { toRealSeconds } from "../gameSpeed";
@@ -9,6 +9,7 @@ interface BattleVisualizerProps {
   unitB: Unit | null;
   countB: number;
   distance: number;
+  controls?: ReactNode;
 }
 
 // AoE2 tiles are 53x53px and unit "speed" is defined in tiles/second, so a
@@ -61,15 +62,21 @@ function healthColor(pct: number): string {
 
 const WORLD_MARGIN_PERCENT = 6;
 
-// Units live on a real coordinate line (0..distance tiles, matching the actual
-// simulated ground) rather than being confined to their own half of the screen -
-// so a fast unit can visibly cover most of the field while a slow one barely
-// moves, and the two can meet anywhere, not just in the middle. The 0/distance
-// endpoints are inset a few percent so a unit sitting at either edge doesn't get
-// clipped by the battlefield's overflow:hidden.
-function worldToPercent(tileFromLeft: number, distanceTiles: number): number {
-  if (distanceTiles <= 0) return 50;
-  const t = clamp(tileFromLeft / distanceTiles, 0, 1);
+// Units live on a real coordinate line, matching the actual simulated ground,
+// rather than being confined to their own half of the screen - so a fast unit
+// can visibly cover most of the field while a slow one barely moves, and the
+// two can meet anywhere, not just in the middle. The margin-to-(100-margin)
+// span always represents `tileCount` tiles (the same count the background
+// grid draws), not just the raw start distance - otherwise a short gap (e.g.
+// two melee units, whose "long range" start is only 1 tile) would get
+// stretched across the full width and look like a full-field sprint instead
+// of the short hop it actually is. When the real gap is shorter than the
+// displayed tile count, it's centered within that wider field rather than
+// pinned to the left edge.
+function worldToPercent(tileFromLeft: number, distanceTiles: number, tileCount: number): number {
+  if (tileCount <= 0) return 50;
+  const paddingTiles = (tileCount - distanceTiles) / 2;
+  const t = clamp((paddingTiles + tileFromLeft) / tileCount, 0, 1);
   return WORLD_MARGIN_PERCENT + t * (100 - 2 * WORLD_MARGIN_PERCENT);
 }
 
@@ -103,7 +110,8 @@ interface SidePosition {
   transitionMs: number;
 }
 
-export function BattleVisualizer({ unitA, countA, unitB, countB, distance }: BattleVisualizerProps) {
+export function BattleVisualizer({ unitA, countA, unitB, countB, distance, controls }: BattleVisualizerProps) {
+  const tileCount = clamp(Math.round(distance), MIN_TILES, MAX_TILES);
   const [result, setResult] = useState<ApproachBattleResult | null>(null);
   const [posA, setPosA] = useState<SidePosition | null>(null);
   const [posB, setPosB] = useState<SidePosition | null>(null);
@@ -127,13 +135,13 @@ export function BattleVisualizer({ unitA, countA, unitB, countB, distance }: Bat
   useEffect(() => {
     clearTimeouts();
     setResult(null);
-    setPosA(null);
-    setPosB(null);
+    setPosA({ percent: worldToPercent(0, distance, tileCount), transitionMs: 0 });
+    setPosB({ percent: worldToPercent(distance, distance, tileCount), transitionMs: 0 });
     setDone(false);
     setHpA([]);
     setHpB([]);
     setAttackFlash(null);
-  }, [unitA, unitB, countA, countB, distance, clearTimeouts]);
+  }, [unitA, unitB, countA, countB, distance, tileCount, clearTimeouts]);
 
   useEffect(() => clearTimeouts, [clearTimeouts]);
 
@@ -173,8 +181,8 @@ export function BattleVisualizer({ unitA, countA, unitB, countB, distance }: Bat
     const speedB = unitB.speed ?? 0;
     const tilesTraveledA = clamp(speedA * sim.timeToRangeA, 0, distance);
     const tilesTraveledB = clamp(speedB * sim.timeToRangeB, 0, distance);
-    const rawTargetA = worldToPercent(tilesTraveledA, distance);
-    const rawTargetB = worldToPercent(distance - tilesTraveledB, distance);
+    const rawTargetA = worldToPercent(tilesTraveledA, distance, tileCount);
+    const rawTargetB = worldToPercent(distance - tilesTraveledB, distance, tileCount);
     const arrivalMsA = Math.max(toRealSeconds(sim.timeToRangeA) * scale, 16);
     const arrivalMsB = Math.max(toRealSeconds(sim.timeToRangeB) * scale, 16);
 
@@ -184,8 +192,8 @@ export function BattleVisualizer({ unitA, countA, unitB, countB, distance }: Bat
     // own arrival time drives its transition duration, so a unit that takes
     // longer to reach its range visibly keeps marching the whole time instead of
     // sitting still and then snapping into place right before it starts fighting.
-    setPosA({ percent: worldToPercent(0, distance), transitionMs: 0 });
-    setPosB({ percent: worldToPercent(distance, distance), transitionMs: 0 });
+    setPosA({ percent: worldToPercent(0, distance, tileCount), transitionMs: 0 });
+    setPosB({ percent: worldToPercent(distance, distance, tileCount), transitionMs: 0 });
 
     const raf1 = window.requestAnimationFrame(() => {
       // The DOM now reflects this side's actual unit count (hpA/hpB were set
@@ -222,7 +230,6 @@ export function BattleVisualizer({ unitA, countA, unitB, countB, distance }: Bat
   };
 
   const unreachable = result !== null && !result.reachable;
-  const tileCount = clamp(Math.round(distance), MIN_TILES, MAX_TILES);
   const totalMaxA = countA * unitA.hit_points;
   const totalMaxB = countB * unitB.hit_points;
   const totalCurrentA = sum(hpA);
@@ -231,9 +238,12 @@ export function BattleVisualizer({ unitA, countA, unitB, countB, distance }: Bat
 
   return (
     <div className="battle-visualizer">
-      <button type="button" onClick={handleSimulate}>
-        Simulate Battle
-      </button>
+      <div className="battle-visualizer-controls">
+        <button type="button" onClick={handleSimulate}>
+          Simulate Battle
+        </button>
+        {controls}
+      </div>
 
       {unreachable ? (
         <p className="battle-visualizer-empty">

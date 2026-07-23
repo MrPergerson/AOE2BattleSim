@@ -24,7 +24,6 @@ export function UnitPicker({
   onCountChange,
 }: UnitPickerProps) {
   const [units, setUnits] = useState<Unit[]>([]);
-  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (civId === null) return;
@@ -40,10 +39,6 @@ export function UnitPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [civId]);
 
-  const filtered = units.filter((u) =>
-    u.name.toLowerCase().includes(search.toLowerCase()),
-  );
-
   return (
     <div className="unit-picker">
       <h2>{label}</h2>
@@ -58,22 +53,14 @@ export function UnitPicker({
         ))}
       </select>
 
-      <input
-        type="text"
-        placeholder="Search units..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
-
       <select
-        size={8}
         value={unit?.id ?? ""}
         onChange={(e) => {
           const found = units.find((u) => u.id === Number(e.target.value));
           onUnitChange(found ?? null);
         }}
       >
-        {filtered.map((u) => (
+        {units.map((u) => (
           <option key={u.id} value={u.id}>
             {u.name}
           </option>

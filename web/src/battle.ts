@@ -52,8 +52,8 @@ export function simulateArmyBattle(
   let frontHpA = unitA.hit_points;
   let frontHpB = unitB.hit_points;
 
-  let nextAttackA = startTimeA + unitA.reload_time;
-  let nextAttackB = startTimeB + unitB.reload_time;
+  let nextAttackA = startTimeA;
+  let nextAttackB = startTimeB;
   let time = 0;
 
   const log: VolleyEvent[] = [];
