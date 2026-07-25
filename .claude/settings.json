@@ -3,7 +3,11 @@
     "allow": [
       "Bash(python build_upgrades.py)",
       "Skill(dataviz)",
-      "Skill(dataviz:*)"
+      "Skill(dataviz:*)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(gh auth *)"
     ]
   }
 }
