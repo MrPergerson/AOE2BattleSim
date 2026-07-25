@@ -7,7 +7,13 @@
       "Bash(echo \"exit: $?\")",
       "Bash(npm run *)",
       "Bash(git add *)",
-      "Bash(gh auth *)"
+      "Bash(gh auth *)",
+      "Bash(curl -s \"https://api.github.com/repos/MrPergerson/AOE2BattleSim/actions/runs?per_page=5\")",
+      "Bash(curl -s -o /tmp/index.html -w \"HTTP %{http_code}\\\\n\" https://mrpergerson.github.io/AOE2BattleSim/)",
+      "Bash(curl -s https://mrpergerson.github.io/AOE2BattleSim/)",
+      "Bash(curl -s \"https://api.github.com/repos/MrPergerson/AOE2BattleSim/actions/runs/30139349166/jobs\")",
+      "Bash(curl -sL \"https://api.github.com/repos/MrPergerson/AOE2BattleSim/actions/jobs/89629525360/logs\")",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code}\\\\n\" \"https://api.github.com/repos/MrPergerson/AOE2BattleSim/pages\")"
     ]
   }
 }
