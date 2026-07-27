@@ -10,6 +10,14 @@ from paths_config import DATA_SET, LANG_FILE, LANG_1X_FILE
 ALLOWLIST_FILE = "unit_allowlist.json"
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "web" / "public" / "data"
 
+# Civ.name from the .dat file is each civ's pre-DE name (see civ_tech_tree.py's
+# CIV_NAME_OVERRIDES for the full list of renames) - this overrides just the ones
+# whose current DE display name should actually be shown in the UI instead.
+CIV_DISPLAY_NAME_OVERRIDES = {
+    "British": "Britons",
+    "French": "Franks",
+}
+
 # Unit.class_ has no name of its own, but the scenario editor's "Class" dropdown
 # strings live in the key-value file at exactly `13300 + class_` - verified against
 # every distinct class_ id in this project's allowlist (0 -> "Archer", 6 -> "Infantry",
@@ -140,7 +148,7 @@ def main():
         with open(OUTPUT_DIR / "units" / f"{civ_id}.json", "w", encoding="utf-8") as f:
             json.dump(records, f, ensure_ascii=False)
 
-        civs_meta.append({"id": civ_id, "name": civ.name})
+        civs_meta.append({"id": civ_id, "name": CIV_DISPLAY_NAME_OVERRIDES.get(civ.name, civ.name)})
         total_written += len(records)
 
     with open(OUTPUT_DIR / "civs.json", "w", encoding="utf-8") as f:

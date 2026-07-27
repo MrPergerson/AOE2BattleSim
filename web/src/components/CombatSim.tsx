@@ -37,8 +37,9 @@ export function CombatSim({ mode }: CombatSimProps) {
     getCivs().then((fetched) => {
       const playable = fetched.filter((c) => c.id !== 0);
       setCivs(playable);
-      setCivIdA(playable[0]?.id ?? null);
-      setCivIdB(playable[1]?.id ?? null);
+      const findByName = (name: string) => playable.find((c) => c.name === name);
+      setCivIdA(findByName("Britons")?.id ?? playable[0]?.id ?? null);
+      setCivIdB(findByName("Franks")?.id ?? playable[1]?.id ?? null);
     });
   }, []);
 

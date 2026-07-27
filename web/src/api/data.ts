@@ -9,7 +9,9 @@ const upgradesByCiv = new Map<number, Promise<Upgrade[]>>();
 
 export function getCivs(): Promise<Civ[]> {
   if (!civsPromise) {
-    civsPromise = fetch(dataUrl("civs.json")).then((res) => res.json());
+    civsPromise = fetch(dataUrl("civs.json"))
+      .then((res) => res.json())
+      .then((civs: Civ[]) => civs.slice().sort((a, b) => a.name.localeCompare(b.name)));
   }
   return civsPromise;
 }
