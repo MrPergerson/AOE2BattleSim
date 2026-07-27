@@ -4,7 +4,7 @@ import type { Unit } from "../types";
 export type RangeMode = "long" | "close";
 
 export function useRangeDistance(unitA: Unit | null, unitB: Unit | null) {
-  const [rangeMode, setRangeMode] = useState<RangeMode>("long");
+  const [rangeMode, setRangeMode] = useState<RangeMode>("close");
 
   const distance = useMemo(() => {
     if (rangeMode === "close") return 1;

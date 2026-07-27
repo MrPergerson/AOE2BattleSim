@@ -40,8 +40,8 @@ export function UnitPicker({
   }, [civId]);
 
   return (
-    <div className="unit-picker">
-      <h2>{label}</h2>
+    <div className="card unit-picker">
+      <span className="tag">{label}</span>
       <select
         value={civId ?? ""}
         onChange={(e) => onCivChange(Number(e.target.value))}

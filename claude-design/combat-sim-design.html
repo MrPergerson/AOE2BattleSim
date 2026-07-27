@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="stylesheet" href="_ds/classical-0c83c4c5-75be-49ac-9d6b-38d27f283d86/styles.css">
+<script src="_ds/classical-0c83c4c5-75be-49ac-9d6b-38d27f283d86/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:var(--color-bg);font-family:var(--font-body);color:var(--color-text)}
+a{color:var(--color-accent-700)}
+a:hover{color:var(--color-accent-900)}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column">
+  <div style="border-bottom:1px solid var(--color-divider);padding:20px clamp(20px,4vw,56px);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+    <h1 style="margin:0;font-size:clamp(24px,3vw,32px);font-weight:var(--font-heading-weight)">AOE2 Battle Sim</h1>
+    <div style="display:flex;gap:6px">
+      <button class="btn {{ btnSimple }}" onClick="{{ setSimple }}" type="button">Simple</button>
+      <button class="btn {{ btnAdvanced }}" onClick="{{ setAdvanced }}" type="button">Advanced</button>
+    </div>
+  </div>
+
+  <div style="flex:1;width:100%;max-width:1100px;margin:0 auto;padding:clamp(24px,4vw,48px) clamp(20px,4vw,56px);display:flex;flex-direction:column;gap:28px">
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px">
+      <div class="card" style="display:flex;flex-direction:column;gap:10px">
+        <span class="tag tag-accent">Army A</span>
+        <select class="input"><option>Britons</option><option>Teutons</option><option>Mongols</option></select>
+        <select class="input"><option>Longbowman</option></select>
+        <label style="font-size:13px;color:var(--color-neutral-700);display:flex;align-items:center;gap:8px">Count <input class="input" style="width:80px" type="number" value="8"></label>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;gap:10px">
+        <span class="tag tag-accent-2">Army B</span>
+        <select class="input"><option>Teutons</option><option>Britons</option><option>Mongols</option></select>
+        <select class="input"><option>Halberdier</option></select>
+        <label style="font-size:13px;color:var(--color-neutral-700);display:flex;align-items:center;gap:8px">Count <input class="input" style="width:80px" type="number" value="12"></label>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <sc-if value="{{ hasRun }}" hint-placeholder-val="{{ false }}">
+        <h2 style="margin:0;font-size:clamp(19px,2.2vw,24px)">Longbowman wins in 4.2s <span style="font-weight:400;font-size:15px;color:var(--color-neutral-700)">— 3/8 left, 52% HP</span></h2>
+      </sc-if>
+      <div style="width:100%;min-height:180px;border:1px solid var(--color-divider);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--color-neutral-700);font-size:13px">battlefield animation</div>
+      <button class="btn btn-primary" style="align-self:flex-start;padding-inline:28px" onClick="{{ runBattle }}" type="button">Run Battle</button>
+    </div>
+
+    <sc-if value="{{ showAdvanced }}" hint-placeholder-val="{{ false }}">
+      <div class="hr"></div>
+      <p style="font-size:13.5px;color:var(--color-neutral-700);line-height:1.5;margin:0">(6 attack − 1 armor) + (0 bonus) = <strong>5 dmg/hit</strong> every 2s. ×8 units = <strong>40 dmg/volley</strong>.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px">
+        <div class="card">
+          <strong style="font-size:14px">Army A Upgrades</strong>
+          <label style="display:flex;gap:8px;font-size:13px;margin-top:10px"><input type="checkbox" checked="{{ true }}"/> Fletching (+1 attack)</label>
+          <label style="display:flex;gap:8px;font-size:13px;margin-top:6px"><input type="checkbox" checked="{{ true }}"/> Bodkin Arrow (+1 attack)</label>
+          <label style="display:flex;gap:8px;font-size:13px;margin-top:6px"><input type="checkbox"/> Bracer (+1 range)</label>
+        </div>
+        <div class="card">
+          <strong style="font-size:14px">Army B Upgrades</strong>
+          <label style="display:flex;gap:8px;font-size:13px;margin-top:10px"><input type="checkbox" checked="{{ true }}"/> Bracer (+1 range)</label>
+          <label style="display:flex;gap:8px;font-size:13px;margin-top:6px"><input type="checkbox"/> Squires (+speed)</label>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto">
+        <table class="table" style="font-size:13.5px;min-width:420px;width:100%">
+          <thead><tr><th></th><th>Longbowman</th><th>Halberdier</th></tr></thead>
+          <tbody>
+            <tr><td>Hit Points</td><td>35</td><td>60</td></tr>
+            <tr><td>Attack</td><td>6</td><td>3 (+22 vs cav)</td></tr>
+            <tr><td>Range</td><td>5</td><td>0</td></tr>
+            <tr><td>Cost</td><td>40w, 30g</td><td>35f, 25w</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { mode: 'simple', hasRun: false };
+  renderVals() {
+    const s = this.state;
+    const btn = (active) => active ? 'btn-primary' : 'btn-ghost';
+    return {
+      btnSimple: btn(s.mode === 'simple'),
+      btnAdvanced: btn(s.mode === 'advanced'),
+      setSimple: () => this.setState({ mode: 'simple' }),
+      setAdvanced: () => this.setState({ mode: 'advanced' }),
+      hasRun: s.hasRun,
+      showAdvanced: s.mode === 'advanced',
+      runBattle: () => this.setState({ hasRun: true }),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

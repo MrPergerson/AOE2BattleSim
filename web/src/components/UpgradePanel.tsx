@@ -9,7 +9,6 @@ const AGE_LABELS: Record<number, string> = {
 };
 
 interface UpgradePanelProps {
-  label: string;
   source: UpgradeSource;
   unit: Unit | null;
   upgrades: Upgrade[];
@@ -29,7 +28,6 @@ function formatBonus(u: Upgrade): string {
 }
 
 export function UpgradePanel({
-  label,
   source,
   unit,
   upgrades,
@@ -50,10 +48,8 @@ export function UpgradePanel({
     .sort((a, b) => a.age - b.age || a.name.localeCompare(b.name));
 
   return (
-    <div className="upgrade-panel">
-      <h3>
-        {label} {source} Upgrades
-      </h3>
+    <div className="upgrade-source">
+      <h4>{source}</h4>
 
       {visible.length > 0 && (
         <div className="upgrade-panel-actions">

@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useState, useRef, type ReactNode } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useState,
+  useRef,
+} from "react";
 import type { Unit } from "../types";
 import { simulateApproachBattle, type ApproachBattleResult } from "../approach";
 import { toRealSeconds } from "../gameSpeed";
@@ -9,26 +16,37 @@ interface BattleVisualizerProps {
   unitB: Unit | null;
   countB: number;
   distance: number;
-  controls?: ReactNode;
+  speedMultiplier?: number;
+  onOutcomeChange?: (outcome: string | null) => void;
+}
+
+export interface BattleVisualizerHandle {
+  simulate: () => void;
 }
 
 // AoE2 tiles are 53x53px and unit "speed" is defined in tiles/second, so a
-// speed-1 unit covers 53px of simulated ground per game-second. The replay
-// isn't fast-forwarded into a fixed-length clip - every wall-clock duration
-// below (arrival times, volley timing, total length) is the real number of
-// seconds a viewer watching an actual AoE2DE multiplayer game (which runs at
-// gameSpeed.GAME_SPEED_MULTIPLIER, not 1.0x) would experience, via
-// toRealSeconds(). Positions, though, are computed from the *raw* game-second
-// values (sim.timeToRangeA/B) rather than the real-seconds ones - tiles =
-// speed * time only holds when time is paired with the same game-second basis
-// the speed stat is defined against; converting it to real seconds first
-// would make a unit visibly overshoot or undershoot its actual stopping tile.
+// speed-1 unit covers 53px of simulated ground per game-second. At the default
+// 1x speedMultiplier, every wall-clock duration below (arrival times, volley
+// timing, total length) is the real number of seconds a viewer watching an
+// actual AoE2DE multiplayer game (which runs at gameSpeed.GAME_SPEED_MULTIPLIER,
+// not 1.0x) would experience, via toRealSeconds(). speedMultiplier fast-forwards
+// that real-time playback (see the virtual-clock helpers below) without
+// touching the underlying game-second math. Positions are computed from the
+// *raw* game-second values (sim.timeToRangeA/B) rather than the real-seconds
+// ones - tiles = speed * time only holds when time is paired with the same
+// game-second basis the speed stat is defined against; converting it to real
+// seconds first would make a unit visibly overshoot or undershoot its actual
+// stopping tile.
 const MS_PER_SIMULATED_SECOND = 1000;
 const MIN_TILES = 6;
 const MAX_TILES = 20;
 
 function clamp(n: number, min: number, max: number): number {
   return Math.min(Math.max(n, min), max);
+}
+
+function lerp(from: number, to: number, t: number): number {
+  return from + (to - from) * clamp(t, 0, 1);
 }
 
 function sum(values: number[]): number {
@@ -105,95 +123,132 @@ function applyMinContactGap(
   return [mid - minGapPercent / 2, mid + minGapPercent / 2];
 }
 
-interface SidePosition {
-  percent: number;
-  transitionMs: number;
+// Tracks elapsed "base ms" - real-world ms at speedMultiplier=1 - as a function
+// of wall-clock time, letting the fast-speed toggle change the playback rate of
+// a battle that's already mid-flight. Rather than baking speedMultiplier into
+// fixed setTimeout delays up front (which can't be rescheduled once running),
+// every render loop tick re-derives elapsed base-ms from the *current*
+// multiplier. Whenever the multiplier changes, the clock is checkpointed first
+// (elapsed-so-far is computed under the *old* rate and frozen into baseMsAtSync)
+// so time already played doesn't get retroactively stretched or squashed.
+interface VirtualClock {
+  realMsAtSync: number;
+  baseMsAtSync: number;
 }
 
-export function BattleVisualizer({ unitA, countA, unitB, countB, distance, controls }: BattleVisualizerProps) {
+export const BattleVisualizer = forwardRef<BattleVisualizerHandle, BattleVisualizerProps>(
+  function BattleVisualizer(
+    { unitA, countA, unitB, countB, distance, speedMultiplier = 1, onOutcomeChange },
+    ref,
+  ) {
   const tileCount = clamp(Math.round(distance), MIN_TILES, MAX_TILES);
   const [result, setResult] = useState<ApproachBattleResult | null>(null);
-  const [posA, setPosA] = useState<SidePosition | null>(null);
-  const [posB, setPosB] = useState<SidePosition | null>(null);
-  const [done, setDone] = useState(false);
+  const [posAPercent, setPosAPercent] = useState<number | null>(null);
+  const [posBPercent, setPosBPercent] = useState<number | null>(null);
   const [hpA, setHpA] = useState<number[]>([]);
   const [hpB, setHpB] = useState<number[]>([]);
   const [attackFlash, setAttackFlash] = useState<"A" | "B" | null>(null);
-  const timeoutsRef = useRef<number[]>([]);
+  const flashTimeoutsRef = useRef<number[]>([]);
   const rafsRef = useRef<number[]>([]);
+  const mainRafRef = useRef<number | null>(null);
+  const clockRef = useRef<VirtualClock | null>(null);
+  const speedMultiplierRef = useRef(speedMultiplier);
+  const eventCursorRef = useRef(0);
   const battlefieldRef = useRef<HTMLDivElement | null>(null);
   const clusterARef = useRef<HTMLDivElement | null>(null);
   const clusterBRef = useRef<HTMLDivElement | null>(null);
 
-  const clearTimeouts = useCallback(() => {
-    timeoutsRef.current.forEach((id) => window.clearTimeout(id));
-    timeoutsRef.current = [];
-    rafsRef.current.forEach((id) => window.cancelAnimationFrame(id));
-    rafsRef.current = [];
+  const getElapsedBaseMs = useCallback((now: number): number => {
+    const clock = clockRef.current;
+    if (!clock) return 0;
+    return clock.baseMsAtSync + (now - clock.realMsAtSync) * speedMultiplierRef.current;
   }, []);
 
   useEffect(() => {
-    clearTimeouts();
+    if (clockRef.current) {
+      const now = performance.now();
+      clockRef.current = { realMsAtSync: now, baseMsAtSync: getElapsedBaseMs(now) };
+    }
+    speedMultiplierRef.current = speedMultiplier;
+  }, [speedMultiplier, getElapsedBaseMs]);
+
+  const clearAll = useCallback(() => {
+    flashTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
+    flashTimeoutsRef.current = [];
+    rafsRef.current.forEach((id) => window.cancelAnimationFrame(id));
+    rafsRef.current = [];
+    if (mainRafRef.current !== null) {
+      window.cancelAnimationFrame(mainRafRef.current);
+      mainRafRef.current = null;
+    }
+    clockRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    clearAll();
     setResult(null);
-    setPosA({ percent: worldToPercent(0, distance, tileCount), transitionMs: 0 });
-    setPosB({ percent: worldToPercent(distance, distance, tileCount), transitionMs: 0 });
-    setDone(false);
+    setPosAPercent(worldToPercent(0, distance, tileCount));
+    setPosBPercent(worldToPercent(distance, distance, tileCount));
     setHpA([]);
     setHpB([]);
     setAttackFlash(null);
-  }, [unitA, unitB, countA, countB, distance, tileCount, clearTimeouts]);
+    onOutcomeChange?.(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unitA, unitB, countA, countB, distance, tileCount, clearAll]);
 
-  useEffect(() => clearTimeouts, [clearTimeouts]);
+  useEffect(() => clearAll, [clearAll]);
 
-  if (!unitA || !unitB) {
-    return <p>Pick a unit on both sides to see the battle.</p>;
-  }
-
-  const handleSimulate = () => {
-    clearTimeouts();
+  const handleSimulate = useCallback(() => {
+    if (!unitA || !unitB) return;
+    clearAll();
     const sim = simulateApproachBattle(unitA, countA, unitB, countB, distance);
     setResult(sim);
     setHpA(Array(countA).fill(unitA.hit_points));
     setHpB(Array(countB).fill(unitB.hit_points));
     setAttackFlash(null);
-    setDone(false);
+    onOutcomeChange?.(null);
 
     if (!sim.reachable) {
-      setPosA(null);
-      setPosB(null);
-      setDone(true);
+      setPosAPercent(null);
+      setPosBPercent(null);
       return;
     }
 
-    const scale = MS_PER_SIMULATED_SECOND;
-    const totalMs = toRealSeconds(sim.duration) * scale;
+    // All timings below are "base ms" - real-world ms at speedMultiplier=1 - and
+    // stay fixed for the lifetime of this battle. The virtual clock (started once
+    // the resting positions are measured below) is what actually converts these
+    // into wall-clock progress, at whatever speedMultiplier is current at each
+    // animation frame.
+    const totalMs = toRealSeconds(sim.duration) * MS_PER_SIMULATED_SECOND;
 
     // Each side moves at its own constant speed from t=0 until *its own* arrival
     // time (timeToRangeA/B) and then stops for good - that's true whether it's the
     // side that gets there first (it only ever moves during the "both closing"
     // phase) or the side that has to keep going alone afterward (same speed the
     // whole way, just unaccompanied for the back half) - so its world position is
-    // exactly linear over that window, and a single CSS transition can represent
-    // it exactly rather than approximating a multi-phase move. Distance traveled
-    // uses the raw (game-second) arrival time, not the real-seconds one - see the
-    // note above.
+    // exactly linear over that window. Distance traveled uses the raw
+    // (game-second) arrival time, not the real-seconds one - see the note above.
     const speedA = unitA.speed ?? 0;
     const speedB = unitB.speed ?? 0;
     const tilesTraveledA = clamp(speedA * sim.timeToRangeA, 0, distance);
     const tilesTraveledB = clamp(speedB * sim.timeToRangeB, 0, distance);
     const rawTargetA = worldToPercent(tilesTraveledA, distance, tileCount);
     const rawTargetB = worldToPercent(distance - tilesTraveledB, distance, tileCount);
-    const arrivalMsA = Math.max(toRealSeconds(sim.timeToRangeA) * scale, 16);
-    const arrivalMsB = Math.max(toRealSeconds(sim.timeToRangeB) * scale, 16);
+    const arrivalMsA = Math.max(toRealSeconds(sim.timeToRangeA) * MS_PER_SIMULATED_SECOND, 16);
+    const arrivalMsB = Math.max(toRealSeconds(sim.timeToRangeB) * MS_PER_SIMULATED_SECOND, 16);
+    const startA = worldToPercent(0, distance, tileCount);
+    const startB = worldToPercent(distance, distance, tileCount);
 
-    // Snap both sides back to their starting positions with no transition first,
-    // then (a couple of frames later, so the browser actually paints that reset)
-    // kick off the real glide toward each side's resting position - each side's
-    // own arrival time drives its transition duration, so a unit that takes
-    // longer to reach its range visibly keeps marching the whole time instead of
-    // sitting still and then snapping into place right before it starts fighting.
-    setPosA({ percent: worldToPercent(0, distance, tileCount), transitionMs: 0 });
-    setPosB({ percent: worldToPercent(distance, distance, tileCount), transitionMs: 0 });
+    setPosAPercent(startA);
+    setPosBPercent(startB);
+
+    const events = sim.log.map((event) => ({
+      ...event,
+      delayMs: toRealSeconds(event.time) * MS_PER_SIMULATED_SECOND,
+    }));
+
+    const winnerName = sim.winner === "A" ? unitA.name : sim.winner === "B" ? unitB.name : null;
+    const outcomeText = sim.winner === "tie" ? "Tie — both sides wiped out" : `${winnerName} wins!`;
 
     const raf1 = window.requestAnimationFrame(() => {
       // The DOM now reflects this side's actual unit count (hpA/hpB were set
@@ -207,44 +262,53 @@ export function BattleVisualizer({ unitA, countA, unitB, countB, distance, contr
       const [targetA, targetB] = applyMinContactGap(rawTargetA, rawTargetB, minGapPercent);
 
       const raf2 = window.requestAnimationFrame(() => {
-        setPosA({ percent: targetA, transitionMs: arrivalMsA });
-        setPosB({ percent: targetB, transitionMs: arrivalMsB });
+        eventCursorRef.current = 0;
+        clockRef.current = { realMsAtSync: performance.now(), baseMsAtSync: 0 };
+
+        const tick = (now: number) => {
+          const elapsed = getElapsedBaseMs(now);
+
+          while (eventCursorRef.current < events.length && events[eventCursorRef.current].delayMs <= elapsed) {
+            const event = events[eventCursorRef.current];
+            setAttackFlash(event.attacker);
+            if (event.attacker === "A") setHpB((prev) => applyDamage(prev, event.damage));
+            else setHpA((prev) => applyDamage(prev, event.damage));
+            flashTimeoutsRef.current.push(window.setTimeout(() => setAttackFlash(null), 150));
+            eventCursorRef.current++;
+          }
+
+          setPosAPercent(lerp(startA, targetA, elapsed / arrivalMsA));
+          setPosBPercent(lerp(startB, targetB, elapsed / arrivalMsB));
+
+          if (elapsed >= totalMs + 100) {
+            onOutcomeChange?.(outcomeText);
+            mainRafRef.current = null;
+            return;
+          }
+          mainRafRef.current = window.requestAnimationFrame(tick);
+        };
+        mainRafRef.current = window.requestAnimationFrame(tick);
       });
       rafsRef.current.push(raf2);
     });
     rafsRef.current.push(raf1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unitA, unitB, countA, countB, distance, tileCount, clearAll, getElapsedBaseMs]);
 
-    for (const event of sim.log) {
-      const eventDelay = toRealSeconds(event.time) * scale;
-      timeoutsRef.current.push(
-        window.setTimeout(() => {
-          setAttackFlash(event.attacker);
-          if (event.attacker === "A") setHpB((prev) => applyDamage(prev, event.damage));
-          else setHpA((prev) => applyDamage(prev, event.damage));
-          timeoutsRef.current.push(window.setTimeout(() => setAttackFlash(null), 150));
-        }, eventDelay),
-      );
-    }
+  useImperativeHandle(ref, () => ({ simulate: handleSimulate }), [handleSimulate]);
 
-    timeoutsRef.current.push(window.setTimeout(() => setDone(true), totalMs + 100));
-  };
+  if (!unitA || !unitB) {
+    return <p>Pick a unit on both sides to see the battle.</p>;
+  }
 
   const unreachable = result !== null && !result.reachable;
   const totalMaxA = countA * unitA.hit_points;
   const totalMaxB = countB * unitB.hit_points;
   const totalCurrentA = sum(hpA);
   const totalCurrentB = sum(hpB);
-  const winnerName = result?.winner === "A" ? unitA.name : result?.winner === "B" ? unitB.name : null;
 
   return (
     <div className="battle-visualizer">
-      <div className="battle-visualizer-controls">
-        <button type="button" onClick={handleSimulate}>
-          Simulate Battle
-        </button>
-        {controls}
-      </div>
-
       {unreachable ? (
         <p className="battle-visualizer-empty">
           These two units have no speed between them and can never close a {distance}-tile gap.
@@ -261,11 +325,8 @@ export function BattleVisualizer({ unitA, countA, unitB, countB, distance, contr
               ref={clusterARef}
               className={`army-cluster side-a ${attackFlash === "A" ? "attacking" : ""}`}
               style={
-                posA
-                  ? {
-                      left: `${posA.percent}%`,
-                      transition: `left ${posA.transitionMs}ms linear, background 0.15s ease`,
-                    }
+                posAPercent !== null
+                  ? { left: `${posAPercent}%`, transition: "background 0.15s ease" }
                   : undefined
               }
             >
@@ -285,11 +346,8 @@ export function BattleVisualizer({ unitA, countA, unitB, countB, distance, contr
               ref={clusterBRef}
               className={`army-cluster side-b ${attackFlash === "B" ? "attacking" : ""}`}
               style={
-                posB
-                  ? {
-                      left: `${posB.percent}%`,
-                      transition: `left ${posB.transitionMs}ms linear, background 0.15s ease`,
-                    }
+                posBPercent !== null
+                  ? { left: `${posBPercent}%`, transition: "background 0.15s ease" }
                   : undefined
               }
             >
@@ -343,14 +401,9 @@ export function BattleVisualizer({ unitA, countA, unitB, countB, distance, contr
               </span>
             </div>
           </div>
-
-          {done && result && (
-            <p className="battle-winner-banner">
-              {result.winner === "tie" ? "Tie — both sides wiped out" : `${winnerName} wins!`}
-            </p>
-          )}
         </>
       )}
     </div>
   );
-}
+  },
+);

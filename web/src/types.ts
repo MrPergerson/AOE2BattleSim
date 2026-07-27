@@ -1,3 +1,5 @@
+export type SimMode = "simple" | "advanced";
+
 export interface Civ {
   id: number;
   name: string;

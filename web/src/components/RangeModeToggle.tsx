@@ -12,21 +12,21 @@ export function RangeModeToggle({ rangeMode, onChange }: RangeModeToggleProps) {
         <input
           type="radio"
           name="range-mode"
-          value="long"
-          checked={rangeMode === "long"}
-          onChange={() => onChange("long")}
-        />
-        Long range
-      </label>
-      <label>
-        <input
-          type="radio"
-          name="range-mode"
           value="close"
           checked={rangeMode === "close"}
           onChange={() => onChange("close")}
         />
         Close range
+      </label>
+      <label>
+        <input
+          type="radio"
+          name="range-mode"
+          value="long"
+          checked={rangeMode === "long"}
+          onChange={() => onChange("long")}
+        />
+        Long range
       </label>
     </div>
   );

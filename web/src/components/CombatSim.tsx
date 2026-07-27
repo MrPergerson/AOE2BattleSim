@@ -1,18 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getCivs, getUpgrades } from "../api/data";
 import { UnitPicker } from "./UnitPicker";
-import { UpgradePanel } from "./UpgradePanel";
+import { UpgradeCard } from "./UpgradeCard";
 import { BattleReport } from "./BattleReport";
-import { BattleVisualizer } from "./BattleVisualizer";
+import { DamageBreakdown } from "./DamageBreakdown";
+import { BattleVisualizer, type BattleVisualizerHandle } from "./BattleVisualizer";
 import { RangeModeToggle } from "./RangeModeToggle";
 import { StatCompare } from "./StatCompare";
 import { applyUpgrades } from "../upgrades";
 import { useRangeDistance } from "../hooks/useRangeDistance";
-import type { Civ, Unit, Upgrade, UpgradeSource } from "../types";
+import type { Civ, SimMode, Unit, Upgrade } from "../types";
 
-const UPGRADE_SOURCES: UpgradeSource[] = ["Blacksmith", "University", "Unique"];
+interface CombatSimProps {
+  mode: SimMode;
+}
 
-export function CombatSim() {
+export function CombatSim({ mode }: CombatSimProps) {
   const [civs, setCivs] = useState<Civ[]>([]);
   const [civIdA, setCivIdA] = useState<number | null>(null);
   const [civIdB, setCivIdB] = useState<number | null>(null);
@@ -25,6 +28,10 @@ export function CombatSim() {
   const [upgradesB, setUpgradesB] = useState<Upgrade[]>([]);
   const [selectedIdsA, setSelectedIdsA] = useState<Set<number>>(new Set());
   const [selectedIdsB, setSelectedIdsB] = useState<Set<number>>(new Set());
+  const [fastSpeed, setFastSpeed] = useState(false);
+  const [battleOutcome, setBattleOutcome] = useState<string | null>(null);
+
+  const visualizerRef = useRef<BattleVisualizerHandle>(null);
 
   useEffect(() => {
     getCivs().then((fetched) => {
@@ -88,11 +95,15 @@ export function CombatSim() {
     appliedB?.unit ?? null,
   );
 
+  const handleRunBattle = () => {
+    visualizerRef.current?.simulate();
+  };
+
   return (
     <div className="combat-sim">
       <div className="pickers">
         <UnitPicker
-          label="Unit A"
+          label="Army A"
           civs={civs}
           civId={civIdA}
           onCivChange={setCivIdA}
@@ -102,7 +113,7 @@ export function CombatSim() {
           onCountChange={setCountA}
         />
         <UnitPicker
-          label="Unit B"
+          label="Army B"
           civs={civs}
           civId={civIdB}
           onCivChange={setCivIdB}
@@ -113,55 +124,91 @@ export function CombatSim() {
         />
       </div>
 
-      <BattleVisualizer
-        unitA={appliedA?.unit ?? null}
-        countA={countA}
-        unitB={appliedB?.unit ?? null}
-        countB={countB}
-        distance={distance}
-        controls={<RangeModeToggle rangeMode={rangeMode} onChange={setRangeMode} />}
-      />
+      <hr className="hr" />
 
-      <BattleReport
-        unitA={appliedA?.unit ?? null}
-        countA={countA}
-        unitB={appliedB?.unit ?? null}
-        countB={countB}
-      />
+      <div className="result-section">
+        <RangeModeToggle rangeMode={rangeMode} onChange={setRangeMode} />
 
-      {UPGRADE_SOURCES.map((source) => (
-        <div className="upgrade-panels" key={source}>
-          <UpgradePanel
-            label="Unit A"
-            source={source}
-            unit={unitA}
-            upgrades={upgradesA}
-            selectedIds={selectedIdsA}
-            onToggle={toggleA}
-            onSelectAll={selectAllA}
-            onClearAll={clearAllA}
-          />
-          <UpgradePanel
-            label="Unit B"
-            source={source}
-            unit={unitB}
-            upgrades={upgradesB}
-            selectedIds={selectedIdsB}
-            onToggle={toggleB}
-            onSelectAll={selectAllB}
-            onClearAll={clearAllB}
-          />
+        <BattleVisualizer
+          ref={visualizerRef}
+          unitA={appliedA?.unit ?? null}
+          countA={countA}
+          unitB={appliedB?.unit ?? null}
+          countB={countB}
+          distance={distance}
+          speedMultiplier={fastSpeed ? 4 : 1}
+          onOutcomeChange={setBattleOutcome}
+        />
+
+        <div className="run-battle-row">
+          <div className="run-battle-left">
+            <button type="button" className="btn btn-primary run-battle-btn" onClick={handleRunBattle}>
+              Run Battle
+            </button>
+            {battleOutcome && <span className="battle-winner-banner">{battleOutcome}</span>}
+          </div>
+          <button
+            type="button"
+            className={fastSpeed ? "btn btn-primary" : "btn btn-ghost"}
+            onClick={() => setFastSpeed((prev) => !prev)}
+          >
+            Fast Speed
+          </button>
         </div>
-      ))}
+      </div>
 
-      <StatCompare
-        unitA={appliedA?.unit ?? null}
-        countA={countA}
-        bonusesA={appliedA?.bonuses ?? null}
-        unitB={appliedB?.unit ?? null}
-        countB={countB}
-        bonusesB={appliedB?.bonuses ?? null}
-      />
+      {mode === "advanced" && (
+        <>
+          <hr className="hr" />
+          <div className="advanced-section">
+            <BattleReport
+              unitA={appliedA?.unit ?? null}
+              countA={countA}
+              unitB={appliedB?.unit ?? null}
+              countB={countB}
+            />
+
+            <DamageBreakdown
+              unitA={appliedA?.unit ?? null}
+              countA={countA}
+              unitB={appliedB?.unit ?? null}
+              countB={countB}
+            />
+
+            <div className="upgrade-cards">
+              <UpgradeCard
+                label="Army A"
+                unit={unitA}
+                upgrades={upgradesA}
+                selectedIds={selectedIdsA}
+                onToggle={toggleA}
+                onSelectAll={selectAllA}
+                onClearAll={clearAllA}
+              />
+              <UpgradeCard
+                label="Army B"
+                unit={unitB}
+                upgrades={upgradesB}
+                selectedIds={selectedIdsB}
+                onToggle={toggleB}
+                onSelectAll={selectAllB}
+                onClearAll={clearAllB}
+              />
+            </div>
+
+            <div className="table-scroll">
+              <StatCompare
+                unitA={appliedA?.unit ?? null}
+                countA={countA}
+                bonusesA={appliedA?.bonuses ?? null}
+                unitB={appliedB?.unit ?? null}
+                countB={countB}
+                bonusesB={appliedB?.bonuses ?? null}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
